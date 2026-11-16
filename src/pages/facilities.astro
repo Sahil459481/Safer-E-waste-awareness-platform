@@ -4,10 +4,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 <BaseLayout title="Find e-waste facility information" description="Search recently verified Maharashtra e-waste recyclers, refurbishers, and dismantlers with official source and validity details.">
   <section class="page-hero"><div class="container"><p class="eyebrow">Maharashtra pilot</p><h1>Find an authorised option</h1><p class="lede">Search the reviewed directory for a possible formal route. Always confirm accepted items and operating details directly before travelling.</p></div></section>
   <section class="section-tight"><div class="container">
-    <div class="facility-warning"><strong>The MPCB PDF is dated March 2024.</strong> It contains entries whose permissions may have expired or changed. It is available below as a reference, but those records are not treated as current until checked against MPCB’s live register and reviewed by the project team.</div>
+    <div class="facility-warning"><strong>Only reviewed records appear in search.</strong> MPCB register entries have been loaded for team review. A facility becomes searchable only after its current authorisation is checked and approved. Until then, use MPCB’s live register and confirm acceptance before travelling.</div>
     <form class="tool-panel section-tight" id="facility-search" novalidate>
       <div class="form-grid">
         <div class="field"><label for="facility-query">Search by facility name, address, or district</label><input id="facility-query" name="query" type="search" maxlength="80" autocomplete="off" placeholder="For example, Pune" /></div>
+        <div class="field"><label for="facility-district">District</label><input id="facility-district" name="district" type="search" maxlength="60" autocomplete="off" placeholder="Any district" /></div>
         <div class="field"><label for="facility-type">Authorisation category</label><select id="facility-type" name="type"><option value="all">All categories</option><option value="Recycler">Recycler</option><option value="Refurbisher">Refurbisher</option><option value="Dismantler">Dismantler</option></select></div>
         <button class="button" type="submit">Search directory</button>
       </div>
@@ -35,7 +36,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </details>
   </div></section>
   <script>
-    import { facilitySearchSchema } from '../lib/input-schemas';
+    import { facilitySearchResponseSchema, facilitySearchSchema } from '../lib/input-schemas';
 
     const form = document.querySelector<HTMLFormElement>('#facility-search');
     const status = document.querySelector<HTMLElement>('#facility-search-status');
@@ -72,27 +73,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     };
 
     const render = (payload: unknown) => {
-      if (!payload || typeof payload !== 'object' || !('items' in payload) || !Array.isArray(payload.items)) {
+      const parsedPayload = facilitySearchResponseSchema.safeParse(payload);
+      if (!parsedPayload.success) {
         showError('Unable to fetch facilities. Try again later.');
         return;
       }
-      const data = payload as { page?: unknown; pageSize?: unknown; total?: unknown; items: unknown[] };
-      const total = typeof data.total === 'number' && Number.isSafeInteger(data.total) && data.total >= 0 ? data.total : 0;
-      const pageSize = typeof data.pageSize === 'number' && Number.isSafeInteger(data.pageSize) && data.pageSize > 0 ? data.pageSize : 10;
-      currentPage = typeof data.page === 'number' && Number.isSafeInteger(data.page) && data.page > 0 ? data.page : 1;
+      const data = parsedPayload.data;
+      const total = data.total;
+      const pageSize = data.pageSize;
+      currentPage = data.page;
       lastPage = Math.max(1, Math.ceil(total / pageSize));
 
       const cards: HTMLElement[] = [];
-      for (const raw of data.items.slice(0, 25)) {
-        if (!raw || typeof raw !== 'object') continue;
-        const item = raw as Record<string, unknown>;
-        const textValues = ['name', 'address', 'district', 'type', 'sourceCheckedOn', 'validUntil', 'verifiedOn'];
-        if (!textValues.every((key) => typeof item[key] === 'string' && (item[key] as string).length <= 500)) continue;
-
+      for (const item of data.items) {
         const card = document.createElement('article');
         card.className = 'facility-result card';
-        addText(card, 'h2', item.name as string);
-        addText(card, 'p', item.address as string);
+        addText(card, 'h2', item.name);
+        addText(card, 'p', item.address);
         addText(card, 'p', `${item.district} · ${item.type}`, 'facility-result-meta');
         addText(card, 'p', `Listed authorisation valid through ${item.validUntil}. Last checked ${item.sourceCheckedOn}; project verification ${item.verifiedOn}.`, 'small-note');
         if (sourceIsOfficial(item.sourceUrl)) {
@@ -108,7 +105,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       results?.replaceChildren(...cards);
       if (total === 0) {
-        showError('No recently verified facility records matched. Check the live MPCB register and confirm details before visiting.', 'success');
+        showError('No recently verified facility records matched. Records appear here only after the team confirms current authorisation. Check MPCB’s live register for current listings.', 'success');
       } else if (cards.length === 0) {
         showError('Unable to display facility results. Please try again later.');
       } else if (status) {

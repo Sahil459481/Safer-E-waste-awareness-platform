@@ -16,7 +16,7 @@ It does not accept device uploads, user accounts, comments, facility submissions
 
 ## 2. Technology choices
 
-- **Astro static output:** produces public HTML pages at build time. The facility finder calls a same-origin API only when a visitor searches.
+- **Astro static output:** produces public HTML pages at build time. The facility finder calls a same-origin API only when a visitor searches, with name/address, district, category, and pagination filters.
 - **Supabase Edge Function + PostgreSQL:** serves only approved, unexpired facilities recently verified by the project team. The browser calls the function with a public publishable key; it never receives a database or secret key.
 - **TypeScript:** used for the dashboard data, schemas, and browser-side interactions.
 - **Zod:** validates browser search controls and server query parameters.
@@ -44,7 +44,7 @@ The shared page shell is `src/layouts/BaseLayout.astro`. Navigation and footer l
 
 The official MPCB e-waste page links a facility list dated March 2024. The facility finder embeds this PDF as historical reference. A record appearing in that old document is not enough to claim that its current registration, authorisation, consent, operations, contact details, or accepted items remain valid. The live register is linked separately for current status checks.
 
-The Edge Function calls one bounded SQL routine in `backend/migrations/003_public_facility_search.sql`. That function is owned by the non-login `facility_api_reader` role, which has SELECT-only table access and is constrained by RLS. The browser has no direct table grants. The API returns only rows marked approved, with unexpired authorisation and project verification within 180 days. The old PDF is not bulk-published; records must be checked against the live official register before approval. No public import or administration route exists. Do not add sample facilities or infer district-level waste quantities from facility locations or capacity.
+The Edge Function calls one bounded SQL routine in `backend/migrations/003_public_facility_search.sql`. That function is owned by the non-login `facility_api_reader` role, which has SELECT-only table access and is constrained by RLS. The browser has no direct table grants. The API returns only rows marked approved, with unexpired authorisation and project verification within 180 days. On 16 November 2026, 69 records from the live MPCB outward register were imported as review candidates; none are approved, so the public finder correctly returns no directory records until human review is completed. The March 2024 PDF remains a historical reference. No public import or administration route exists. Do not add sample facilities or infer district-level waste quantities from facility locations or capacity.
 
 The current site does not ask for browser geolocation and does not include a map token. If a later version adds a map or “Near me” feature, ask permission only after an explicit click, process coordinates in the browser when possible, and do not send or log them without clear consent. Any geocoding endpoint must be rate limited and use bounded, validated inputs.
 
@@ -78,7 +78,7 @@ The site is not a live feed. A future scheduled source check may flag changes, b
 
 ## 6. Input handling and safe rendering
 
-`src/lib/input-schemas.ts` contains strict Zod schemas for the directory and dashboard filters. Search text is trimmed, length-limited, and restricted to letters, numbers, spaces, and basic punctuation. The browser encodes validated search values in a same-origin GET request. The API validates again, caps pages at 40 and page size at 25, escapes SQL wildcard characters, and binds every filter as a PostgreSQL parameter. Results are built with DOM text nodes rather than HTML strings.
+`src/lib/input-schemas.ts` contains strict Zod schemas for directory filters, the directory response, and dashboard filters. Search text is trimmed, length-limited, and restricted to letters, numbers, spaces, and basic punctuation. The browser encodes validated search values in a same-origin GET request. The API validates again, caps pages at 40 and page size at 25, escapes SQL wildcard characters, and binds every filter as a PostgreSQL parameter. Results are built with DOM text nodes rather than HTML strings.
 
 Static awareness content is authored in Astro templates and is not user-submitted Markdown. External official links use `target="_blank"` with `rel="noopener noreferrer"`. No `dangerouslySetInnerHTML` or raw HTML insertion is used.
 
@@ -87,7 +87,7 @@ Static awareness content is authored in Astro templates and is not user-submitte
 - The public API has no write/admin route, account, analytics, or location API. Supabase secret credentials remain in the function runtime and are never sent to the browser.
 - `.env.example` contains only the public project URL and a blank publishable key. Never put a Supabase secret key, service-role key, or database password in a public variable or source file.
 - The public dataset is imported at build time; browser interactions are read-only and local.
-- The mobile menu changes only local presentation state.
+- The mobile menu changes only local presentation state. The header theme control supports light and dark appearance, follows the visitor's system preference initially, and stores an explicit choice in local storage. It stores no identity or location data.
 - `public/_headers` contains a restrictive same-origin CSP, frame denial, content-type protection, referrer policy, permissions policy, and HSTS directive for static hosts that support the `_headers` convention.
 - Before launch, confirm the chosen host applies those headers to built HTML and assets and serves HTTPS. HSTS must only be relied on for an HTTPS production domain. Do not assume this file configures a host that uses a different header mechanism.
 - Avoid adding third-party scripts or external resources without reviewing the CSP, privacy impact, dependency health, and security implications.
@@ -114,7 +114,7 @@ npm install
 npm run dev
 ```
 
-The facility finder uses the Supabase Edge Function described in `backend/README.md`. Copy `.env.example` to `.env`, set the public publishable key, and run `npm run dev`. No local database service or proxy is required.
+The facility finder uses the Supabase Edge Function described in `backend/README.md`. Its browser code sends the public publishable key in the `apikey` request header; it does not use or expose the server secret. Astro proxies `/api/facilities` to the function locally, and the static-host rewrite is in `public/_redirects`. Run `npm run dev`. No local database service is required.
 
 Build static output and preview it locally:
 
@@ -123,9 +123,23 @@ npm run build
 npm run preview
 ```
 
-The generated website is written to `dist/`. The current host/domain and database provider are undecided; deployment configuration must be reviewed once selected. The frontend is not integrated with a live API until the host routes `/api` to this service.
+The generated website is written to `dist/`. The current host/domain is undecided; deployment configuration must be reviewed once selected. The host must support the external rewrite in `public/_redirects` or provide an equivalent same-origin proxy. Before production, set the Edge Function's `ALLOWED_ORIGINS` to the exact production site origin.
 
-## 10. Before public launch
+## 10. Work log
+
+### 16 November 2026 — facility API connection and theme control
+
+- Connected the facility search page to the existing read-only Edge Function through the same-origin `/api/facilities` path, using the active public publishable key from the connected Supabase project. The local `.env` is ignored by Git and contains no server secret.
+- Added a district search field and sends the validated name/address query, district, category, and bounded page values to the API.
+- Added strict Zod validation for facility API responses and kept rendering text-only through DOM `textContent`.
+- Updated facility-page messaging to explain that MPCB data is pending human verification and only approved records can appear. The current database has 69 candidates and no public-approved records.
+- Added a separate, keyboard-accessible light/dark control in the shared header. It starts from the system preference, remembers an explicit choice locally, and updates the browser theme color.
+- Added dark color tokens and adjusted facility search layout for tablet and mobile widths.
+- Updated this guide and `backend/README.md` to record the current integration and data state.
+- Ran `npm run build`; Astro generated all seven static pages successfully. No test suite was run.
+- No new packages, analytics, GPS collection, public write endpoint, or new tests were added. Deployment routing still depends on the selected host supporting the documented rewrite.
+
+## 11. Before public launch
 
 - Re-verify facility data and publish only records with current official evidence and review dates.
 - Recheck the latest E-Waste Rules/amendments and consumer guidance on official sites.
