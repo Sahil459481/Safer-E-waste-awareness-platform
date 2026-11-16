@@ -129,7 +129,7 @@ The generated website is written to `dist/`. The current host/domain is undecide
 
 ### 16 November 2026 — facility API connection and theme control
 
-- Connected the facility search page to the existing read-only Edge Function through the same-origin `/api/facilities` path, using the active public publishable key from the connected Supabase project. The local `.env` is ignored by Git and contains no server secret.
+- Connected the facility search page to the existing read-only Edge Function through the same-origin `/api/facilities/` path, using the active public publishable key from the connected Supabase project. The trailing slash is required by this site's `trailingSlash: 'always'` setting. The local `.env` is ignored by Git and contains no server secret.
 - Added a district search field and sends the validated name/address query, district, category, and bounded page values to the API.
 - Added strict Zod validation for facility API responses and kept rendering text-only through DOM `textContent`.
 - Updated facility-page messaging to explain that MPCB data is pending human verification and only approved records can appear. The current database has 69 candidates and no public-approved records.
@@ -138,6 +138,13 @@ The generated website is written to `dist/`. The current host/domain is undecide
 - Updated this guide and `backend/README.md` to record the current integration and data state.
 - Ran `npm run build`; Astro generated all seven static pages successfully. No test suite was run.
 - No new packages, analytics, GPS collection, public write endpoint, or new tests were added. Deployment routing still depends on the selected host supporting the documented rewrite.
+
+### 16 November 2026 — local search error correction
+
+- Traced the screenshot's “service is not available” message to an Astro 404: `/api/facilities` was missing the trailing slash required by this site's routing configuration, and the fetch correctly rejected Astro's redirect because `redirect: 'error'` is enabled.
+- Confirmed the Supabase Edge Function itself returned HTTP 200 with the expected empty result shape. It returned zero rows because no facility candidates are approved for public listing yet.
+- Changed the browser request to `/api/facilities/` and added the slash form to `public/_redirects`; kept the no-slash rewrite as a compatibility alias.
+- Rechecked the corrected local proxy path: it returned HTTP 200 and the expected JSON response. Rebuilt successfully; all seven static pages generated.
 
 ## 11. Before public launch
 

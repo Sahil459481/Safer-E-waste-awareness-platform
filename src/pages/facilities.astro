@@ -140,7 +140,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         if (projectUrl.protocol !== 'https:' || !projectUrl.hostname.endsWith('.supabase.co') || projectUrl.username || projectUrl.password) {
           throw new Error('service unavailable');
         }
-        const response = await fetch(`/api/facilities?${params.toString()}`, {
+        const response = await fetch(`/api/facilities/?${params.toString()}`, {
           method: 'GET',
           headers: { Accept: 'application/json', apikey: publishableKey },
           credentials: 'same-origin',
