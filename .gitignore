@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.astro/
+.env
+.env.*
+!.env.example
+.DS_Store
+coverage/
+Data_Driven_E_Waste_Awareness_and_Management_Platform.docx

@@ -1,0 +1,48 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const documents = [
+  {
+    id: 'faq',
+    title: 'CPCB e-waste FAQ',
+    description: 'Consumer-focused explanations of e-waste and the E-Waste (Management) Rules, 2022.',
+    date: 'Published 23 January 2024',
+    url: 'https://cpcb.nic.in/uploads/Projects/E-Waste/FAQ_ewaste_23012024.pdf',
+    source: 'Central Pollution Control Board (CPCB)',
+  },
+  {
+    id: 'rules-2022',
+    title: 'E-Waste (Management) Rules, 2022',
+    description: 'The foundational rules text. Check the amendment documents below and the Ministry page for the current position.',
+    date: 'Rules notified in 2022',
+    url: 'https://cpcb.nic.in/uploads/Projects/E-Waste/e-waste_rules_2022.pdf',
+    source: 'Central Pollution Control Board (CPCB)',
+  },
+  {
+    id: 'amendment-2024',
+    title: 'E-Waste (Management) Amendment Rules, 2024',
+    description: 'The 8 March 2024 amendment document. This is one amendment; consult the Ministry’s rules page for other amendments and updates.',
+    date: 'Dated 8 March 2024',
+    url: 'https://moef.gov.in/uploads/2024/03/E-Waste%20%28Management%29%20Amendment%20Rules%2C%208th%20March%202024.pdf',
+    source: 'Ministry of Environment, Forest and Climate Change (MoEFCC)',
+  },
+];
+---
+<BaseLayout title="Read official e-waste documents" description="Read official CPCB and MoEFCC e-waste guidance and rules in an embedded PDF viewer.">
+  <section class="page-hero"><div class="container"><p class="eyebrow">Official documents</p><h1>Read the source documents here</h1><p class="lede">These PDFs are shown in the page so you can read them without navigating away. Each viewer loads from the official publisher; if your browser blocks embedding, use the clearly labelled source link.</p></div></section>
+  <section class="section-tight"><div class="container document-list">
+    <div class="note"><strong>For current legal information:</strong><p>Rules may be amended after a PDF is published. These documents are provided for reference, not legal advice. Check the <a href="https://www.moef.gov.in/rules-regulations-3" target="_blank" rel="noopener noreferrer">MoEFCC rules and regulations page</a> for the current set of notifications.</p></div>
+    {documents.map((document) => (
+      <article class="document-card" aria-labelledby={`${document.id}-title`}>
+        <div class="document-heading">
+          <div><p class="eyebrow">{document.source} · {document.date}</p><h2 id={`${document.id}-title`}>{document.title}</h2><p>{document.description}</p></div>
+          <a class="button button-secondary" href={document.url} target="_blank" rel="noopener noreferrer">Open PDF directly ↗</a>
+        </div>
+        <iframe class="pdf-viewer" src={document.url} title={`Embedded PDF: ${document.title}`} loading="lazy" referrerpolicy="no-referrer">
+          <p>Your browser cannot display this PDF. <a href={document.url} target="_blank" rel="noopener noreferrer">Open the official PDF</a>.</p>
+        </iframe>
+        <p class="small-note">Source: {document.source}. The document is hosted by the official publisher; availability and the embedded viewer depend on that site and your browser.</p>
+      </article>
+    ))}
+  </div></section>
+</BaseLayout>

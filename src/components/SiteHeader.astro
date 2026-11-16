@@ -1,0 +1,38 @@
+---
+const currentPath = Astro.url.pathname;
+const links = [
+  { href: '/', label: 'Home' },
+  { href: '/guide/', label: 'The guide' },
+  { href: '/rules/', label: 'Indian rules' },
+  { href: '/documents/', label: 'Read official PDFs' },
+  { href: '/facilities/', label: 'Find a facility' },
+  { href: '/data/', label: 'Data' },
+  { href: '/sources/', label: 'Sources' },
+];
+---
+<a class="skip-link" href="#main-content">Skip to content</a>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="/" aria-label="Safer E-Waste home">
+      <span class="brand-mark" aria-hidden="true">↻</span>
+      <span>Safer <b>E‑Waste</b></span>
+    </a>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+      <span class="menu-toggle-label">Menu</span><span aria-hidden="true">☰</span>
+    </button>
+    <nav class="site-nav" id="site-nav" aria-label="Main navigation">
+      {links.map((link) => (
+        <a href={link.href} aria-current={currentPath === link.href ? 'page' : undefined}>{link.label}</a>
+      ))}
+    </nav>
+  </div>
+</header>
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>('.menu-toggle');
+  const nav = document.querySelector<HTMLElement>('#site-nav');
+  toggle?.addEventListener('click', () => {
+    const expanded = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!expanded));
+    nav?.classList.toggle('is-open', !expanded);
+  });
+</script>

@@ -1,0 +1,68 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="A safer next step for old electronics" description="Practical e-waste guidance, official source links, and India data with clear definitions.">
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">A practical guide for India</p>
+        <h1>Give old electronics a safer next step.</h1>
+        <p class="lede">Learn how to handle e-waste safely, find official facility information, and understand what the data can—and cannot—tell us.</p>
+        <div class="button-row">
+          <a class="button" href="/facilities/">Find a facility <span aria-hidden="true">→</span></a>
+          <a class="button button-secondary" href="/guide/">Explore the guide</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <svg viewBox="0 0 440 340" role="img" aria-labelledby="hero-title hero-description">
+          <title id="hero-title">A laptop, phone, and battery ready for a safer next step</title>
+          <desc id="hero-description">A simple illustration of electronics with a circular reuse symbol.</desc>
+          <ellipse cx="220" cy="176" rx="200" ry="145" fill="none" stroke="#c3d8c2" stroke-width="2"/>
+          <rect x="111" y="72" width="242" height="164" rx="18" fill="#fff" stroke="#d9e2d7" stroke-width="2"/>
+          <rect x="128" y="89" width="208" height="126" rx="12" fill="#123c32"/>
+          <path d="M151 116h83M151 137h122M151 158h96" stroke="#dce9d7" stroke-width="8" stroke-linecap="round"/>
+          <circle cx="232" cy="224" r="6" fill="#f0b35d"/>
+          <path d="M89 244h286l-17 17H106z" fill="#123c32"/>
+          <path d="M130 265h204" stroke="#2f6b4f" stroke-width="9" stroke-linecap="round"/>
+          <rect x="360" y="108" width="54" height="105" rx="12" fill="#fff" stroke="#2f6b4f" stroke-width="4"/>
+          <path d="M379 119h16" stroke="#2f6b4f" stroke-width="3" stroke-linecap="round"/>
+          <circle cx="387" cy="198" r="4" fill="#2f6b4f"/>
+          <rect x="38" y="143" width="48" height="90" rx="12" fill="#f0b35d"/>
+          <path d="M54 153h16M53 218h18" stroke="#123c32" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="352" cy="54" r="36" fill="#f0b35d"/>
+          <path d="M365 42a17 17 0 0 0-28 12m0 0 1-10m-1 10 10-1m7 24a17 17 0 0 0 14-22m0 0 6 8m-6-8-4 10" fill="none" stroke="#123c32" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          <text x="28" y="310" fill="#123c32" font-size="12" font-family="system-ui, sans-serif" font-weight="700">PHONE • LAPTOP • BATTERY</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-heading"><h2>A clear route from question to action</h2><p>Start with the item you have. The next step depends on the device and your location.</p></div>
+      <div class="step-list">
+        <article class="step-card"><h3>Check the item</h3><p>Identify the device. Back up important files and sign out before handing it over.</p></article>
+        <article class="step-card"><h3>Choose a formal route</h3><p>Check a product maker’s take-back option or an officially listed facility. Do not dismantle it yourself.</p></article>
+        <article class="step-card"><h3>Confirm before visiting</h3><p>Ask about accepted items, opening hours, fees, and safe handover directly with the provider.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-tight">
+    <div class="container callout">
+      <div><p class="eyebrow">Know the evidence</p><h2>Numbers need context.</h2><p>Every figure should show its source, reporting year, definition, unit, and geographic coverage.</p></div>
+      <a class="button" href="/data/">Open the data dashboard <span aria-hidden="true">→</span></a>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-heading"><h2>Learn by topic</h2><p>Plain-language information that points back to official guidance.</p></div>
+      <div class="card-grid">
+        <article class="card"><div class="icon-box" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><rect x="7" y="3" width="14" height="22" rx="3" stroke="currentColor" stroke-width="2"/><path d="M11 7h6M12 21h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div><h3>Safe handling</h3><p>Keep devices intact, protect personal data, and choose a formal route.</p><a href="/guide/">Read the guide →</a></article>
+        <article class="card"><div class="icon-box" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><path d="M14 3 23 7v6c0 6-4 10-9 12-5-2-9-6-9-12V7z" stroke="currentColor" stroke-width="2"/><path d="m10 14 3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>Indian rules</h3><p>Understand the broad framework and where to check the current rules.</p><a href="/rules/">Read the summary →</a></article>
+        <article class="card"><div class="icon-box" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><path d="M4 23h20M7 20V9h14v11M10 9V5h8v4M11 13h2m3 0h2m-7 4h2m3 0h2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>Find official options</h3><p>Open current Maharashtra Pollution Control Board facility information.</p><a href="/facilities/">Check the directory sources →</a></article>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

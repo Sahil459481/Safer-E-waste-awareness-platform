@@ -1,0 +1,180 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { dataSources, eprSnapshot, nationalIndicators, processedByState } from '../data/e-waste';
+const years = ['2023-24', '2024-25'] as const;
+const current = nationalIndicators['2024-25'];
+const currentProcessed = processedByState.find((item) => item.state === 'Maharashtra');
+const formatNumber = (value: number, digits = 2) => new Intl.NumberFormat('en-IN', { maximumFractionDigits: digits }).format(value);
+---
+<BaseLayout title="India e-waste data dashboard" description="Explore official India e-waste indicators with their sources, reporting periods, definitions, and geographic limits.">
+  <section class="page-hero"><div class="container"><p class="eyebrow">Evidence-first data</p><h1>E-waste data, with context</h1><p class="lede">Choose a measure first. Geographic filters follow the levels actually reported by that source.</p></div></section>
+  <section class="section-tight"><div class="container">
+    <div class="facility-warning"><strong>Coverage matters.</strong> National estimates and state-level processed quantities are different measures. There is no supported district or facility-level waste volume in these sources.</div>
+    <div class="data-grid" aria-label="Latest source-backed indicators">
+      <article class="metric-card"><p class="metric-label">Generated · national estimate</p><p class="metric-value">{formatNumber(current.generatedMt)} MT</p><p class="metric-meta">FY 2024–25 · estimated from producer sales and average product life</p></article>
+      <article class="metric-card"><p class="metric-label">Combined national measure</p><p class="metric-value">{current.combinedManagementPercent}%</p><p class="metric-meta">FY 2024–25 · collected, dismantled and recycled/disposed together</p></article>
+      <article class="metric-card"><p class="metric-label">Recycled · EPR snapshot</p><p class="metric-value">28.75 lakh MT</p><p class="metric-meta">Reported as of 5 March 2026 · a separate snapshot basis</p></article>
+    </div>
+    <form class="tool-panel" id="dashboard-filters" novalidate>
+      <div class="form-grid">
+        <div class="field"><label for="metric">Measure</label><select id="metric" name="metric"><option value="generated">Generated — national estimate</option><option value="combined">Combined collected / dismantled / recycled / disposed</option><option value="recycled">Recycled — EPR snapshot</option><option value="processed">Processed — state-level table</option></select></div>
+        <div class="field"><label for="year">Financial year</label><select id="year" name="year">{years.map((year) => <option value={year} selected={year === '2024-25'}>FY {year}</option>)}</select></div>
+        <div class="field"><label for="state">State (only for processed quantities)</label><select id="state" name="state" disabled>{processedByState.map((row) => <option value={row.state} selected={row.state === 'Maharashtra'}>{row.state}</option>)}</select></div>
+        <button class="button" type="submit">Update view</button>
+      </div>
+      <p class="status-message" id="dashboard-status" aria-live="polite">Showing FY 2024–25 national generation estimate.</p>
+    </form>
+    <div id="data-results">
+      <section class="chart-panel" aria-labelledby="chart-title">
+        <h2 id="chart-title">National generation estimate · FY 2024–25</h2>
+        <p class="small-note">The CPCB estimates generation nationally using sales data from registered producers and average life of notified equipment.</p>
+        <div class="bar-list" role="list"><div class="bar-row" role="listitem"><span class="bar-label">FY 2024–25</span><span class="bar-track" aria-hidden="true"><span class="bar-fill bar-100"></span></span><span class="bar-value">{formatNumber(current.generatedMt)} MT</span></div></div>
+        <div class="table-wrap"><table><caption class="small-note">Data shown in the current view</caption><thead><tr><th scope="col">Reporting period</th><th scope="col">Measure</th><th scope="col">Value</th><th scope="col">Unit</th></tr></thead><tbody><tr><td>FY 2024–25</td><td>Generated — national estimate</td><td>{formatNumber(current.generatedMt)}</td><td>MT</td></tr></tbody></table></div>
+        <div class="source-caption" id="coverage"><p><strong>Source:</strong> <a href={dataSources.national.url} target="_blank" rel="noopener noreferrer">{dataSources.national.label} ↗</a>, published 24 July 2025.</p><p>Geographic coverage: India. Reporting period: FY 2024–25. These figures do not imply district or facility-level generation.</p></div>
+      </section>
+    </div>
+    <noscript><p class="note">Interactive filters need JavaScript. The initial national generation estimate and source remain available above.</p></noscript>
+    <p class="small-note">Data is a dated snapshot, not a live feed. The project team should review official releases before updating the published values.</p>
+  </div></section>
+  <script>
+    import { dashboardFilterSchema } from '../lib/input-schemas';
+    import { dataSources, eprSnapshot, nationalIndicators, processedByState } from '../data/e-waste';
+
+    const form = document.querySelector<HTMLFormElement>('#dashboard-filters');
+    const resultRoot = document.querySelector<HTMLElement>('#data-results');
+    const status = document.querySelector<HTMLElement>('#dashboard-status');
+    const metricSelect = document.querySelector<HTMLSelectElement>('#metric');
+    const yearSelect = document.querySelector<HTMLSelectElement>('#year');
+    const stateSelect = document.querySelector<HTMLSelectElement>('#state');
+    const format = (value: number, digits = 3) => new Intl.NumberFormat('en-IN', { maximumFractionDigits: digits }).format(value);
+
+    function addText(parent: HTMLElement, tag: keyof HTMLElementTagNameMap, text: string, className?: string) {
+      const node = document.createElement(tag);
+      node.textContent = text;
+      if (className) node.className = className;
+      parent.append(node);
+      return node;
+    }
+
+    function render(filters: { metric: 'generated' | 'combined' | 'recycled' | 'processed'; year: '2023-24' | '2024-25'; state: string }) {
+      if (!resultRoot) return;
+      const section = document.createElement('section');
+      section.className = 'chart-panel';
+      section.setAttribute('aria-labelledby', 'chart-title-live');
+      const title = document.createElement('h2');
+      title.id = 'chart-title-live';
+      section.append(title);
+      let rows: Array<{ period: string; measure: string; value: number | null; unit: string }> = [];
+      let source = dataSources.national;
+      let note = '';
+      let summary = '';
+
+      if (filters.metric === 'generated') {
+        title.textContent = 'E-waste generated — India';
+        const item = nationalIndicators[filters.year];
+        rows = [{ period: 'FY ' + filters.year, measure: 'Generated (national estimate)', value: item.generatedMt, unit: 'MT' }];
+        note = 'CPCB estimates generation nationally using registered producer sales data and average product life of notified equipment.';
+        summary = 'Showing the national generation estimate for FY ' + filters.year + '.';
+      } else if (filters.metric === 'combined') {
+        title.textContent = 'Combined national management measure — India';
+        const item = nationalIndicators[filters.year];
+        rows = [{ period: 'FY ' + filters.year, measure: 'Collected, dismantled and recycled / disposed (combined)', value: item.combinedManagementPercent, unit: '%' }];
+        note = 'The source reports this as one combined percentage. It is not a collection-only rate or a recycled-only rate.';
+        summary = 'Showing the combined national measure for FY ' + filters.year + '.';
+      } else if (filters.metric === 'recycled') {
+        title.textContent = 'E-waste recycled under the EPR framework — India';
+        source = dataSources.epr;
+        rows = [{ period: 'As of 5 March 2026', measure: 'E-waste recycled under EPR', value: eprSnapshot.recycledMt, unit: 'MT' }, { period: 'As of 5 March 2026', measure: 'EPR certificates generated', value: eprSnapshot.eprCertificatesMt, unit: 'MT' }];
+        note = 'This is an EPR implementation snapshot. It uses a different basis from the annual state processed quantities.';
+        summary = 'Showing the EPR recycling snapshot reported as of 5 March 2026.';
+      } else {
+        title.textContent = 'E-waste processed — ' + filters.state;
+        const row = processedByState.find((entry) => entry.state === filters.state);
+        source = dataSources.national;
+        rows = row ? [
+          { period: 'FY 2023–24', measure: 'Processed (reported by state)', value: row.fy2023_24, unit: 'MT' },
+          { period: 'FY 2024–25', measure: 'Processed (reported by state)', value: row.fy2024_25, unit: 'MT' },
+        ] : [];
+        note = 'State-wise quantities are based on annual reports from registered recyclers. They are not district or facility throughput totals.';
+        summary = 'Showing state-level processed quantities for ' + filters.state + '.';
+      }
+
+      addText(section, 'p', note, 'small-note');
+      const validValues = rows.map((row) => row.value).filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0);
+      if (validValues.length) {
+        const max = Math.max(...validValues, 1);
+        const bars = document.createElement('div');
+        bars.className = 'bar-list';
+        bars.setAttribute('role', 'list');
+        rows.forEach((row, index) => {
+          const line = document.createElement('div');
+          line.className = 'bar-row';
+          line.setAttribute('role', 'listitem');
+          addText(line, 'span', row.period, 'bar-label');
+          const track = document.createElement('span');
+          track.className = 'bar-track';
+          track.setAttribute('aria-hidden', 'true');
+          const fill = document.createElement('span');
+          const widthStep = row.value === null ? 0 : Math.max(10, Math.ceil((row.value / max) * 10) * 10);
+          fill.className = (index % 2 ? 'bar-fill alt' : 'bar-fill') + ' bar-' + widthStep;
+          track.append(fill);
+          line.append(track);
+          addText(line, 'span', row.value === null ? 'Not reported' : format(row.value) + ' ' + row.unit, 'bar-value');
+          bars.append(line);
+        });
+        section.append(bars);
+      } else {
+        addText(section, 'p', 'No comparable value is available in the selected official source. A missing value is not zero.', 'empty-state');
+      }
+
+      const wrap = document.createElement('div');
+      wrap.className = 'table-wrap';
+      const table = document.createElement('table');
+      const caption = document.createElement('caption');
+      caption.className = 'small-note';
+      caption.textContent = 'Data shown in the current view';
+      table.append(caption);
+      const thead = document.createElement('thead');
+      const headingRow = document.createElement('tr');
+      ['Reporting period', 'Measure', 'Value', 'Unit'].forEach((label) => { const th = document.createElement('th'); th.scope = 'col'; th.textContent = label; headingRow.append(th); });
+      thead.append(headingRow); table.append(thead);
+      const tbody = document.createElement('tbody');
+      rows.forEach((row) => { const tr = document.createElement('tr'); [row.period, row.measure, row.value === null ? 'Not reported' : format(row.value), row.unit].forEach((value) => { const td = document.createElement('td'); td.textContent = value; tr.append(td); }); tbody.append(tr); });
+      table.append(tbody); wrap.append(table); section.append(wrap);
+
+      const sourceNote = document.createElement('div');
+      sourceNote.className = 'source-caption';
+      const sourceP = document.createElement('p');
+      const strong = document.createElement('strong'); strong.textContent = 'Source: ';
+      const link = document.createElement('a'); link.href = source.url; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = source.label + ' ↗';
+      sourceP.append(strong, link); sourceNote.append(sourceP);
+      addText(sourceNote, 'p', 'Geography: ' + (filters.metric === 'processed' ? 'state level' : 'India') + '. ' + summary + ' Figures are shown at source-reported levels only.');
+      section.append(sourceNote);
+      resultRoot.replaceChildren(section);
+      if (status) { status.dataset.state = 'success'; status.textContent = summary; }
+    }
+
+    function syncControls() {
+      if (metricSelect && stateSelect && yearSelect) {
+        const isProcessed = metricSelect.value === 'processed';
+        stateSelect.disabled = !isProcessed;
+        const isSnapshot = metricSelect.value === 'recycled';
+        yearSelect.disabled = isSnapshot;
+        if (status) status.textContent = isProcessed ? 'State-level view selected; district and facility quantities are not available.' : isSnapshot ? 'This measure is shown as a dated EPR snapshot.' : 'National-level view selected.';
+      }
+    }
+
+    metricSelect?.addEventListener('change', syncControls);
+    form?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const values = Object.fromEntries(new FormData(form).entries());
+      const parsed = dashboardFilterSchema.safeParse(values);
+      if (!parsed.success) {
+        if (status) { status.dataset.state = 'error'; status.textContent = 'Choose a valid measure, year, and state.'; }
+        return;
+      }
+      render(parsed.data);
+    });
+    syncControls();
+  </script>
+</BaseLayout>

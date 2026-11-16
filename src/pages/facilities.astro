@@ -1,0 +1,167 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Find e-waste facility information" description="Search recently verified Maharashtra e-waste recyclers, refurbishers, and dismantlers with official source and validity details.">
+  <section class="page-hero"><div class="container"><p class="eyebrow">Maharashtra pilot</p><h1>Find an authorised option</h1><p class="lede">Search the reviewed directory for a possible formal route. Always confirm accepted items and operating details directly before travelling.</p></div></section>
+  <section class="section-tight"><div class="container">
+    <div class="facility-warning"><strong>The MPCB PDF is dated March 2024.</strong> It contains entries whose permissions may have expired or changed. It is available below as a reference, but those records are not treated as current until checked against MPCB’s live register and reviewed by the project team.</div>
+    <form class="tool-panel section-tight" id="facility-search" novalidate>
+      <div class="form-grid">
+        <div class="field"><label for="facility-query">Search by facility name, address, or district</label><input id="facility-query" name="query" type="search" maxlength="80" autocomplete="off" placeholder="For example, Pune" /></div>
+        <div class="field"><label for="facility-type">Authorisation category</label><select id="facility-type" name="type"><option value="all">All categories</option><option value="Recycler">Recycler</option><option value="Refurbisher">Refurbisher</option><option value="Dismantler">Dismantler</option></select></div>
+        <button class="button" type="submit">Search directory</button>
+      </div>
+      <p class="status-message" id="facility-search-status" role="status" aria-live="polite">Searches show only records verified within 180 days with an unexpired listed authorisation.</p>
+      <div id="facility-results" class="facility-results" aria-live="polite"></div>
+      <nav id="facility-pagination" class="facility-pagination" aria-label="Facility search pages" hidden>
+        <button class="button button-secondary" type="button" id="facility-previous">Previous</button>
+        <span id="facility-page-label"></span>
+        <button class="button button-secondary" type="button" id="facility-next">Next</button>
+      </nav>
+    </form>
+
+    <div class="card-grid section-tight">
+      <article class="card"><div class="icon-box" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><path d="M14 25s8-8 8-14a8 8 0 1 0-16 0c0 6 8 14 8 14Z" stroke="currentColor" stroke-width="2"/><circle cx="14" cy="11" r="2.5" stroke="currentColor" stroke-width="2"/></svg></div><h3>Check MPCB’s live register</h3><p>The register lists addresses and authorisation validity dates. Confirm the information and ask whether the facility accepts your item.</p><a class="button button-secondary" href="https://www.ecmpcb.in/ewasteOutwardRegistry" target="_blank" rel="noopener noreferrer">Open live register ↗</a></article>
+      <article class="card"><div class="icon-box" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><path d="M5 8h18v15H5zM9 8V5h10v3M9 13h10M9 17h7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>Use the dated list as reference</h3><p>Open the March 2024 MPCB list in the page reader. Its entries need fresh verification before being shown as active here.</p><a href="#mpcb-list">Read the embedded list below ↓</a></article>
+      <article class="card"><div class="icon-box" aria-hidden="true"><svg viewBox="0 0 28 28" fill="none"><path d="M5 23h18M7 23V10l7-5 7 5v13M11 23v-7h6v7M10 12h.1M18 12h.1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>Confirm before visiting</h3><p>Ask about operating hours, accepted items, fees, and written confirmation of handover.</p><a href="/guide/">Read the handover checklist →</a></article>
+    </div>
+
+    <div class="empty-state"><h2>Why no map or “near me” button?</h2><p>A map is useful only when facility records are current. This directory does not request your GPS location and does not infer facility status from an old list.</p><p class="small-note">This site does not certify or endorse any facility. MPCB’s live register takes precedence. A listed authorisation does not guarantee household drop-off service.</p></div>
+
+    <details class="document-card mpcb-list" id="mpcb-list">
+      <summary><span><strong>MPCB authorised e-waste facility list</strong><br /><small>Official PDF linked by MPCB · dated March 2024 · historical reference</small></span></summary>
+      <p class="document-intro">This document is embedded from MPCB. Verify current authorisation in the <a href="https://www.ecmpcb.in/ewasteOutwardRegistry" target="_blank" rel="noopener noreferrer">live MPCB register</a>. If the viewer is unavailable, <a href="https://www.mpcb.gov.in/sites/default/files/Establishment%20of%20MPCB/Seniority%20list/2014/Authorised_E-Waste_Recyclers_%26_Refurbishers-March-2024.pdf" target="_blank" rel="noopener noreferrer">open the official PDF directly ↗</a>.</p>
+      <iframe class="pdf-viewer" src="https://www.mpcb.gov.in/sites/default/files/Establishment%20of%20MPCB/Seniority%20list/2014/Authorised_E-Waste_Recyclers_%26_Refurbishers-March-2024.pdf" title="MPCB authorised e-waste facility list, March 2024" loading="lazy" referrerpolicy="no-referrer"></iframe>
+    </details>
+  </div></section>
+  <script>
+    import { facilitySearchSchema } from '../lib/input-schemas';
+
+    const form = document.querySelector<HTMLFormElement>('#facility-search');
+    const status = document.querySelector<HTMLElement>('#facility-search-status');
+    const results = document.querySelector<HTMLElement>('#facility-results');
+    const pagination = document.querySelector<HTMLElement>('#facility-pagination');
+    const pageLabel = document.querySelector<HTMLElement>('#facility-page-label');
+    const previousButton = document.querySelector<HTMLButtonElement>('#facility-previous');
+    const nextButton = document.querySelector<HTMLButtonElement>('#facility-next');
+    let currentPage = 1;
+    let lastPage = 1;
+    const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL?.trim();
+    const publishableKey = import.meta.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim();
+
+    const sourceIsOfficial = (value: unknown): value is string => {
+      if (typeof value !== 'string') return false;
+      try {
+        const url = new URL(value);
+        return url.protocol === 'https:' && ['mpcb.gov.in', 'www.mpcb.gov.in', 'ecmpcb.in', 'www.ecmpcb.in'].includes(url.hostname);
+      } catch { return false; }
+    };
+
+    const showError = (message: string, state = 'error') => {
+      if (status) { status.dataset.state = state; status.textContent = message; }
+      if (results) results.replaceChildren();
+      if (pagination) pagination.hidden = true;
+    };
+
+    const addText = (parent: HTMLElement, tag: 'h2' | 'p' | 'span', value: string, className?: string) => {
+      const element = document.createElement(tag);
+      element.textContent = value;
+      if (className) element.className = className;
+      parent.append(element);
+      return element;
+    };
+
+    const render = (payload: unknown) => {
+      if (!payload || typeof payload !== 'object' || !('items' in payload) || !Array.isArray(payload.items)) {
+        showError('Unable to fetch facilities. Try again later.');
+        return;
+      }
+      const data = payload as { page?: unknown; pageSize?: unknown; total?: unknown; items: unknown[] };
+      const total = typeof data.total === 'number' && Number.isSafeInteger(data.total) && data.total >= 0 ? data.total : 0;
+      const pageSize = typeof data.pageSize === 'number' && Number.isSafeInteger(data.pageSize) && data.pageSize > 0 ? data.pageSize : 10;
+      currentPage = typeof data.page === 'number' && Number.isSafeInteger(data.page) && data.page > 0 ? data.page : 1;
+      lastPage = Math.max(1, Math.ceil(total / pageSize));
+
+      const cards: HTMLElement[] = [];
+      for (const raw of data.items.slice(0, 25)) {
+        if (!raw || typeof raw !== 'object') continue;
+        const item = raw as Record<string, unknown>;
+        const textValues = ['name', 'address', 'district', 'type', 'sourceCheckedOn', 'validUntil', 'verifiedOn'];
+        if (!textValues.every((key) => typeof item[key] === 'string' && (item[key] as string).length <= 500)) continue;
+
+        const card = document.createElement('article');
+        card.className = 'facility-result card';
+        addText(card, 'h2', item.name as string);
+        addText(card, 'p', item.address as string);
+        addText(card, 'p', `${item.district} · ${item.type}`, 'facility-result-meta');
+        addText(card, 'p', `Listed authorisation valid through ${item.validUntil}. Last checked ${item.sourceCheckedOn}; project verification ${item.verifiedOn}.`, 'small-note');
+        if (sourceIsOfficial(item.sourceUrl)) {
+          const link = document.createElement('a');
+          link.href = item.sourceUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = 'View official source ↗';
+          card.append(link);
+        }
+        cards.push(card);
+      }
+
+      results?.replaceChildren(...cards);
+      if (total === 0) {
+        showError('No recently verified facility records matched. Check the live MPCB register and confirm details before visiting.', 'success');
+      } else if (cards.length === 0) {
+        showError('Unable to display facility results. Please try again later.');
+      } else if (status) {
+        status.dataset.state = 'success';
+        status.textContent = `${total} verified record(s) found. Confirm acceptance and operating details before visiting.`;
+      }
+      if (pagination && pageLabel && previousButton && nextButton) {
+        pagination.hidden = total <= pageSize;
+        pageLabel.textContent = `Page ${currentPage} of ${lastPage}`;
+        previousButton.disabled = currentPage <= 1;
+        nextButton.disabled = currentPage >= lastPage;
+      }
+    };
+
+    const search = async (page: number) => {
+      if (!form) return;
+      const formValues = Object.fromEntries(new FormData(form).entries());
+      const parsed = facilitySearchSchema.safeParse({ ...formValues, page, pageSize: 10 });
+      if (!parsed.success) {
+        showError('Check the search text and try again. Use up to 80 letters, numbers, spaces, or basic punctuation.');
+        return;
+      }
+      if (status) { status.dataset.state = 'loading'; status.textContent = 'Searching recently verified records…'; }
+      results?.replaceChildren();
+      if (pagination) pagination.hidden = true;
+
+      const params = new URLSearchParams({ q: parsed.data.query, type: parsed.data.type, page: String(parsed.data.page), pageSize: String(parsed.data.pageSize) });
+      if (parsed.data.district) params.set('district', parsed.data.district);
+      try {
+        if (!supabaseUrl || !publishableKey) throw new Error('service unavailable');
+        const projectUrl = new URL(supabaseUrl);
+        if (projectUrl.protocol !== 'https:' || !projectUrl.hostname.endsWith('.supabase.co') || projectUrl.username || projectUrl.password) {
+          throw new Error('service unavailable');
+        }
+        const response = await fetch(`/api/facilities?${params.toString()}`, {
+          method: 'GET',
+          headers: { Accept: 'application/json', apikey: publishableKey },
+          credentials: 'same-origin',
+          cache: 'no-store',
+          redirect: 'error',
+        });
+        if (!response.ok) throw new Error('request failed');
+        render(await response.json());
+      } catch {
+        showError('The facility search service is not available right now. Use MPCB’s live register for current information.');
+      }
+    };
+
+    form?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      void search(1);
+    });
+    previousButton?.addEventListener('click', () => { if (currentPage > 1) void search(currentPage - 1); });
+    nextButton?.addEventListener('click', () => { if (currentPage < lastPage) void search(currentPage + 1); });
+  </script>
+</BaseLayout>

@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Sources, limitations, and privacy" description="Official sources, update notes, project scope, and privacy boundaries for the e-waste awareness website.">
+  <section class="page-hero"><div class="container"><p class="eyebrow">Transparency</p><h1>Sources and project notes</h1><p class="lede">Every number, rule summary, and facility decision should be traceable to a source and a date.</p></div></section>
+  <section class="section-tight"><div class="container content-grid">
+    <article class="prose">
+      <h2>Official references</h2>
+      <div class="source-list">
+        <article class="source-item"><h3>National e-waste indicators and state processed quantities</h3><p>PIB parliamentary reply dated 24 July 2025. Reports national generation estimates and a combined collected/dismantled/recycled/disposed percentage for FY 2023–24 and 2024–25, plus state-wise quantities reported as processed.</p><a href="https://www.pib.gov.in/PressReleaseIframePage.aspx?PRID=2147876&lang=2&reg=48" target="_blank" rel="noopener noreferrer">Open PIB source ↗</a></article>
+        <article class="source-item"><h3>E-waste recycled under the EPR framework</h3><p>PIB reply dated 23 March 2026 reports an EPR implementation snapshot as of 5 March 2026. It is a different time basis from the annual state processed table.</p><a href="https://www.pib.gov.in/PressReleasePage.aspx?PRID=2244104&lang=1&reg=1" target="_blank" rel="noopener noreferrer">Open PIB source ↗</a></article>
+        <article class="source-item"><h3>Rules and consumer FAQ</h3><p>Use the Ministry and CPCB pages for the current rules, amendments, and explanations.</p><a href="https://www.moef.gov.in/rules-regulations-3" target="_blank" rel="noopener noreferrer">MoEFCC rules ↗</a> · <a href="https://cpcb.nic.in/uploads/Projects/E-Waste/FAQ_ewaste_23012024.pdf" target="_blank" rel="noopener noreferrer">CPCB FAQ (PDF) ↗</a></article>
+        <article class="source-item"><h3>Maharashtra facility information</h3><p>The MPCB PDF embedded in the facility finder is dated March 2024 and is treated as historical reference only. Check names and validity dates against the MPCB live authorisation register before a record is approved for the finder. Checked 16 November 2026.</p><a href="https://www.ecmpcb.in/ewasteOutwardRegistry" target="_blank" rel="noopener noreferrer">Open live MPCB authorisation register ↗</a> · <a href="https://www.mpcb.gov.in/en/node/4297" target="_blank" rel="noopener noreferrer">Open MPCB e-waste page ↗</a></article>
+      </div>
+      <h2 id="data-limits">Data limitations</h2>
+      <ul><li>Generation is published at national level in the cited dataset.</li><li>The national percentage combines e-waste collected, dismantled, and recycled/disposed; it is not a separate collection-only rate.</li><li>The newer EPR recycled total is a dated snapshot, not an annual value directly comparable to the earlier state processed table.</li><li>Processed quantities are available by state in the cited release, not by district or facility.</li><li>A dash in a source is treated as unavailable, never as zero.</li></ul>
+      <h2 id="privacy">Privacy and data use</h2>
+      <p>This static website does not create accounts, collect form submissions, use analytics, save GPS location, or accept facility uploads. Search and chart filters run in the browser against local read-only data. The optional project survey is separate from this website.</p>
+      <h2>Update approach</h2>
+      <p>Scheduled checks may flag new official materials, but source values and facility records should be reviewed by a person before publication. Show reporting periods and source dates; if a check fails, retain the last verified snapshot and state its age.</p>
+    </article>
+    <aside class="side-card"><h2 class="footer-heading">Project boundary</h2><p>Awareness and source discovery only. The site does not collect, store, transport, dismantle, repair, or certify devices or facilities.</p><a href="/data/#coverage">Read dashboard coverage →</a></aside>
+  </div></section>
+</BaseLayout>
